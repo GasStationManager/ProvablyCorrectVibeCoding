@@ -66,7 +66,7 @@ class LeanProblem:
 class LeanToolClient:
     """Client for interacting with LeanTool API server"""
     
-    def __init__(self, base_url: str = "http://codeproofarena.com:8800/v1"):
+    def __init__(self, base_url: str = "http://www.codeproofarena.com:8800/v1"):
         self.base_url = base_url
         self.session = requests.Session()
     
@@ -83,7 +83,7 @@ class LeanToolClient:
             "gemini-pro",
         ]
     
-    def solve_problem(self, specification: str, model: str = "gpt-4", 
+    def solve_problem(self, specification: str, model: str = "sonnet", 
                      api_key: str = "", max_iterations: int = 10, timeout: int = 300) -> Dict:
         """Send problem to LeanTool for solving using OpenAI-compatible API"""
         
@@ -342,15 +342,21 @@ def main():
     initialize_session_state()
     
     # Main header
-    st.markdown('<h1 class="main-header">🧮 Provably-Correct Vibe Coding</h1>', 
+    st.markdown('<h1 class="main-header">Provably-Correct Vibe Coding</h1>', 
                 unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Generate formally verified code with AI assistance</p>', 
-                unsafe_allow_html=True)
+    #st.markdown('<p class="sub-header">Or, "slop that works"</p>', 
+    #            unsafe_allow_html=True)
     
     # Sidebar for configuration
     with st.sidebar:
         st.header("⚙️ Configuration")
-        
+        # Model selection
+        available_models = st.session_state.leantool_client.get_available_models()
+        selected_model = st.selectbox(
+            "🤖 AI Model",
+            available_models,
+            help="Choose the AI model for solving problems"
+        )        
         # API Key input
         st.subheader("🔑 API Key")
         api_key = st.text_input(
@@ -365,23 +371,15 @@ def main():
             st.success("✅ API key configured")
         else:
             st.warning("⚠️ Please enter your API key to use the service")
-        
-        # Model selection
-        available_models = st.session_state.leantool_client.get_available_models()
-        selected_model = st.selectbox(
-            "🤖 AI Model",
-            available_models,
-            help="Choose the AI model for solving problems"
-        )
-        
+          
         # Solving parameters
         st.subheader("⚙️ Solving Parameters")
         max_iterations = st.slider("Max Iterations", 1, 20, 10)
-        timeout = st.slider("Timeout (seconds)", 30, 600, 300)
+        #timeout = st.slider("Timeout (seconds)", 30, 600, 300)
         
         # LeanTool info
-        st.subheader("🔧 LeanTool Server")
-        st.info("Using: http://codeproofarena.com:8800/v1")
+        #st.subheader("🔧 LeanTool Server")
+        #st.info("Using: http://www.codeproofarena.com:8800/v1")
         
         # CodeProofArena integration
         st.subheader("🏟️ CodeProofArena")
@@ -459,11 +457,11 @@ def main():
                     with st.expander("View Original CodeProofArena Format"):
                         original = selected_arena_problem.get('original_format', {})
                         if original.get('function_signature'):
-                            st.code(original['function_signature'], language='lean', help="Function Signature")
+                            st.code(original['function_signature'], language='lean')
                         if original.get('theorem_signature'):
-                            st.code(original['theorem_signature'], language='lean', help="Theorem Signature")
+                            st.code(original['theorem_signature'], language='lean')
                         if original.get('theorem2_signature'):
-                            st.code(original['theorem2_signature'], language='lean', help="Additional Theorem")
+                            st.code(original['theorem2_signature'], language='lean')
             else:
                 st.info("Load problems from CodeProofArena first (use sidebar)")
                 lean_specification = ""
@@ -492,7 +490,6 @@ def main():
                     selected_model, 
                     st.session_state.api_key,
                     max_iterations, 
-                    timeout
                 )
                 
                 if result.get("success", False):
@@ -579,10 +576,6 @@ def main():
                 unsafe_allow_html=True
             )
             
-            # Show example
-            st.subheader("Example Problem")
-            st.code('''-- Example: Prove addition is commutative
-theorem add_comm_proof (a b : Nat) : a + b = b + a := by sorry''', language="lean")
 
 if __name__ == "__main__":
     main()
