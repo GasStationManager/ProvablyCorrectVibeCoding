@@ -191,7 +191,7 @@ class CodeProofArenaClient:
         self.base_url = base_url
         self.session = requests.Session()
     
-    def get_problems(self, limit: int = 10) -> List[Dict]:
+    def get_problems(self, limit: int = 30) -> List[Dict]:
         """Fetch problems from CodeProofArena and convert to unified format"""
         try:
             response = self.session.get(
@@ -381,16 +381,7 @@ def main():
         #st.subheader("🔧 LeanTool Server")
         #st.info("Using: http://www.codeproofarena.com:8800/v1")
         
-        # CodeProofArena integration
-        st.subheader("🏟️ CodeProofArena")
-        if st.button("Load Problems from Arena"):
-            with st.spinner("Loading problems..."):
-                problems = st.session_state.codeproof_client.get_problems()
-                if problems:
-                    st.success(f"✅ Loaded {len(problems)} problems")
-                    st.session_state.arena_problems = problems
-                else:
-                    st.warning("No problems loaded (check connection)")
+
     
     # Main content area
     col1, col2 = st.columns([1, 1])
@@ -431,6 +422,13 @@ def main():
             )
         
         elif problem_source == "CodeProofArena":
+            if "arena_problems" not in st.session_state:
+              problems = st.session_state.codeproof_client.get_problems()
+              if problems:
+                st.success(f"✅ Loaded {len(problems)} problems")
+                st.session_state.arena_problems = problems
+              else:
+                st.warning("No problems loaded (check connection)")
             if "arena_problems" in st.session_state and st.session_state.arena_problems:
                 problem_titles = [f"{p.get('title', 'Untitled')} (ID: {p.get('id', 'N/A')})" 
                                 for p in st.session_state.arena_problems]
@@ -462,9 +460,10 @@ def main():
                             st.code(original['theorem_signature'], language='lean')
                         if original.get('theorem2_signature'):
                             st.code(original['theorem2_signature'], language='lean')
-            else:
-                st.info("Load problems from CodeProofArena first (use sidebar)")
-                lean_specification = ""
+
+
+
+
         
         # Solve button
         solve_disabled = (not lean_specification.strip() or 
@@ -497,7 +496,8 @@ def main():
                     st.write("✅ Solution generated!")
                     status.update(label="✅ Problem solved!", state="complete")
                 else:
-                    st.write(f"❌ Error: {result.get('error', 'Unknown error')}")
+                    st.session_state.current_solution=result.get('error', 'Unknown error')
+                    st.write(f"❌ Error: {st.session_state_current_solution}")
                     status.update(label="❌ Solving failed", state="error")
                 
                 st.session_state.solving_in_progress = False
