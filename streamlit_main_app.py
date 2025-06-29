@@ -83,7 +83,7 @@ class LeanToolClient:
             "gemini-pro",
         ]
     
-    def solve_problem(self, specification: str, model: str = "sonnet", 
+    def solve_problem(self, description: str, specification: str, model: str = "sonnet", 
                      api_key: str = "", max_iterations: int = 10, timeout: int = 300) -> Dict:
         """Send problem to LeanTool for solving using OpenAI-compatible API"""
         
@@ -98,15 +98,12 @@ class LeanToolClient:
             "model": model,
             "messages": [
                 {
-                    "role": "system", 
-                    "content": f"You are an expert Lean 4 theorem prover. Solve the following specification by implementing the required functions and proving the theorems. You have {max_iterations} iterations to get it right."
-                },
-                {
                     "role": "user", 
-                    "content": f"Please solve this Lean 4 specification:\n\n{specification}"
+                    "content": f"Please solve the following problem. Description:\n\n{description}\n\nYour solution should satisfy the following Lean 4 specification:\n\n{specification}"
                 }
             ],
             "max_tokens": 2000,
+            "max_attempts": max_iterations,
             "temperature": 0.1
         }
         
@@ -220,6 +217,13 @@ class CodeProofArenaClient:
             logger.error(f"Failed to fetch problems: {e}")
             return []
     
+    def add_sorry(self, sig:str) ->str:
+        if 'sorry' not in sig:
+            if not sig.strip().endswith(':='):
+                sig += ' := '
+            sig += 'sorry'
+        return sig
+
     def _convert_codeproof_format(self, problem: Dict) -> str:
         """Convert CodeProofArena's separate signature format to unified specification"""
         specification_parts = []
@@ -227,19 +231,19 @@ class CodeProofArenaClient:
         # Add function signature if present
         if problem.get("function_signature"):
             specification_parts.append(f"-- Function to implement:")
-            specification_parts.append(problem["function_signature"])
+            specification_parts.append(self.add_sorry(problem["function_signature"]))
             specification_parts.append("")
         
         # Add theorem signature if present  
         if problem.get("theorem_signature"):
             specification_parts.append(f"-- Theorem to prove:")
-            specification_parts.append(problem["theorem_signature"])
+            specification_parts.append(self.add_sorry(problem["theorem_signature"]))
             specification_parts.append("")
         
         # Add second theorem signature if present
         if problem.get("theorem2_signature"):
             specification_parts.append(f"-- Additional theorem to prove:")
-            specification_parts.append(problem["theorem2_signature"])
+            specification_parts.append(self.add_sorry(problem["theorem2_signature"]))
             specification_parts.append("")
         
         # If no structured signatures, fall back to description or generic format
@@ -405,7 +409,7 @@ def main():
             if selected_problem:
                 problem = SAMPLE_PROBLEMS[selected_problem]
                 st.markdown(f"**Difficulty:** {problem.difficulty}")
-                st.markdown(f"**Description:** {problem.description}")
+                problem_description=st.text_area("Description",value=problem.description,height=300)
                 
                 lean_specification = st.text_area(
                     "Lean Specification",
@@ -413,8 +417,13 @@ def main():
                     height=300,
                     help="Edit the Lean specification if needed"
                 )
+
         
         elif problem_source == "Custom Input":
+            problem_description = st.text_area(
+                "Problem Description",
+                height=300
+            )
             lean_specification = st.text_area(
                 "Enter your Lean specification",
                 placeholder="-- Enter your Lean specification here...\ndef my_function := sorry\ntheorem my_theorem : my_property := by sorry",
@@ -440,9 +449,9 @@ def main():
                     selected_arena_problem = st.session_state.arena_problems[problem_idx]
                     
                     # Show problem details
-                    st.markdown(f"**Description:** {selected_arena_problem.get('description', 'No description')}")
-                    st.markdown(f"**Difficulty:** {selected_arena_problem.get('difficulty', 'Unknown')}")
                     
+                    st.markdown(f"**Difficulty:** {selected_arena_problem.get('difficulty', 'Unknown')}")
+                    problem_description=st.text_area("Description:",value= selected_arena_problem.get('description', 'No description'), height=300)
                     # Show the unified specification (converted from CodeProofArena format)
                     lean_specification = st.text_area(
                         "Lean Specification (converted from Arena format)",
@@ -485,6 +494,7 @@ def main():
                 
                 # Call LeanTool API
                 result = st.session_state.leantool_client.solve_problem(
+                    problem_description,
                     lean_specification, 
                     selected_model, 
                     st.session_state.api_key,

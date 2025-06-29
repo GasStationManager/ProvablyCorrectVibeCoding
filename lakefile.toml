@@ -1,0 +1,26 @@
+name = "ProvablyCorrectVibeCoding"
+version = "0.1.0"
+keywords = ["math"]
+defaultTargets = ["ProvablyCorrectVibeCoding"]
+
+[leanOptions]
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+autoImplicit = false
+
+[[require]]
+name = "Hammer"
+git = "https://github.com/JOSHCLUNE/LeanHammer"
+rev = "main"
+
+[[require]]
+name = "SafeVerify"
+git = "https://github.com/GasStationManager/SafeVerify.git"
+rev = "main"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.20.1"
+
+[[lean_lib]]
+name = "ProvablyCorrectVibeCoding"
