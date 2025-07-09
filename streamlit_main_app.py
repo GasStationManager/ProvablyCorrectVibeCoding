@@ -5,6 +5,9 @@ import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 import logging
+import re
+
+from judge import check_lean_proof
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -55,6 +58,23 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+def get_current_page():
+    """Get current page from URL query parameters"""
+    query_params = st.query_params
+    return query_params.get("page", "landing")
+
+def extract_code (message_content: str):
+    final_code=""
+    if message_content and "<Result>" in message_content:
+        # Extract the final result
+        match = re.search(r"<Result>(.*?)</Result>", message_content, re.DOTALL)
+        if match:
+            final_code = match.group(1).strip()
+            final_code = final_code.replace("```lean", "").replace("```", "")
+
+    return final_code
+
 
 @dataclass
 class LeanProblem:
@@ -134,52 +154,6 @@ class LeanToolClient:
         except Exception as e:
             return {"success": False, "error": f"Network error: {str(e)}"}
     
-    def verify_solution(self, code: str, api_key: str = "") -> Dict:
-        """Verify a Lean solution by asking the model to check it"""
-        headers = {
-            "Content-Type": "application/json", 
-            "Authorization": f"Bearer {api_key}"
-        }
-        
-        payload = {
-            "model": "gpt-4",  # Use a reliable model for verification
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a Lean 4 expert. Check if the provided code is syntactically correct and if the proofs are complete. Respond with 'VERIFIED' if correct, or explain the issues."
-                },
-                {
-                    "role": "user",
-                    "content": f"Please verify this Lean 4 code:\n\n{code}"
-                }
-            ],
-            "max_tokens": 1000,
-            "temperature": 0
-        }
-        
-        try:
-            response = self.session.post(
-                f"{self.base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-                timeout=60
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                verification_response = result["choices"][0]["message"]["content"]
-                verified = "VERIFIED" in verification_response.upper()
-                return {
-                    "verified": verified,
-                    "response": verification_response
-                }
-            else:
-                return {
-                    "verified": False,
-                    "error": f"Verification failed with status {response.status_code}"
-                }
-        except Exception as e:
-            return {"verified": False, "error": f"Verification error: {str(e)}"}
 
 class CodeProofArenaClient:
     """Client for interacting with CodeProofArena API"""
@@ -342,9 +316,50 @@ def initialize_session_state():
     if "api_key" not in st.session_state:
         st.session_state.api_key = ""
 
-def main():
-    initialize_session_state()
-    
+
+def show_landing_page():
+    # Your landing content...
+    st.markdown('<h1 class="main-header">Provably-Correct Vibe Coding</h1>', 
+                unsafe_allow_html=True)
+    st.markdown('<h3 class="main-header">Or "slop that works", depending on your taste in memes...</h1>', 
+                unsafe_allow_html=True)
+    st.markdown("""
+Vibe coding sometimes gets a bad rap, but I believe it reresents a fundamental desire: I have a brilliant idea, and want to turn that into something concrete that people can use. I know what I want to create but don't have the programming expertise. Can my AI assistant help implement my idea into software?
+
+It gets the bad rap because it often doesn't work.  While the current AI coding assistants can often produce large amounts of plausible-looking code, and perhaps 80% of it is correct; the AI often hallucinates and introduces bugs somewhere in the code. When the AI produces such "slop", our vibe coder would not be able to debug it. Even professional developers may find the debugging effort to be not worth it.
+
+What if, our AI assistant can produce code that is guaranteed to be correct? 
+
+*What kind of guarantees?* 
+
+A mathematical proof that the code produces exactly the result that the vibe coder asks for.
+
+*Oh no! Math?? Do I need to understand the proof?*
+
+The good news is that you don't have to understand the proof, because the proof will be machine-checkable. If the proof passes the proof checker program, it is guaranteed to be correct. 
+
+There is a catch: you will need to express the specification in a way that is precise, unambiguous and complete.
+             
+In this demo, you will be able to pose a coding task as a formal specification
+in [Lean](https://lean-lang.org/), a programming language and theorem prover.
+The formal specification will take the form of a signature of a function to be implemented, plus theorem statements about the  function.
+Then, an AI coding agent will attempt to solve the task by implementing the function
+and proving the theorem statements.
+Finally, you can verify whether the submitted solution is valid by sending it to the Lean proof checker.
+
+
+
+"""
+    )
+    if st.button("🚀 Get Started", type="primary"):
+        st.query_params["page"] = "main"
+        st.rerun()
+
+
+def show_main_app():
+    if st.button("← Back to Introduction", type="secondary"):
+        st.query_params["page"] = "landing" 
+        st.rerun()
     # Main header
     st.markdown('<h1 class="main-header">Provably-Correct Vibe Coding</h1>', 
                 unsafe_allow_html=True)
@@ -388,7 +403,7 @@ def main():
 
     
     # Main content area
-    col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns([0.4, 0.6])
     
     with col1:
         st.header("📝 Problem Specification")
@@ -507,7 +522,7 @@ def main():
                     status.update(label="✅ Problem solved!", state="complete")
                 else:
                     st.session_state.current_solution=result.get('error', 'Unknown error')
-                    st.write(f"❌ Error: {st.session_state_current_solution}")
+                    st.write(f"❌ Error: {st.session_state.current_solution}")
                     status.update(label="❌ Solving failed", state="error")
                 
                 st.session_state.solving_in_progress = False
@@ -519,7 +534,11 @@ def main():
         
         if st.session_state.current_solution:
             # Display the solution
-            st.code(st.session_state.current_solution, language="lean")
+            st.markdown(st.session_state.current_solution)
+            current_code=extract_code(st.session_state.current_solution)
+            if current_code:
+              st.subheader("Code")
+              st.code(current_code, language="lean")
             
             # Verification section
             st.subheader("🔍 Verification")
@@ -527,17 +546,16 @@ def main():
             col_verify, col_download = st.columns([1, 1])
             
             with col_verify:
-                if st.button("Verify Solution", type="secondary"):
-                    if st.session_state.api_key.strip():
+                if st.button("Verify Solution", type="secondary", disabled=(not current_code.strip())):
+
                         with st.spinner("Verifying solution..."):
-                            verification_result = st.session_state.leantool_client.verify_solution(
-                                st.session_state.current_solution,
-                                st.session_state.api_key
+                            verification_result = check_lean_proof(
+                                lean_specification,
+                                current_code,
                             )
                             st.session_state.last_verification = verification_result
                             st.rerun()
-                    else:
-                        st.error("Please enter your API key first")
+
             
             with col_download:
                 st.download_button(
@@ -550,34 +568,31 @@ def main():
             # Show verification results
             if st.session_state.last_verification:
                 verification = st.session_state.last_verification
-                if verification.get("verified", False):
+                if verification.get("is_correct", False):
                     st.markdown(
-                        '<div class="success-box">✅ <strong>Verification Passed!</strong> The AI believes the solution is correct.</div>',
+                        '<div class="success-box">✅ <strong>Verification Passed!</strong> </div>',
                         unsafe_allow_html=True
                     )
                     # Show verification response if available
-                    if verification.get("response"):
+                    if verification.get("feedback"):
                         with st.expander("View Verification Details"):
-                            st.text(verification["response"])
+                            st.text(verification["feedback"])
                 else:
-                    error_msg = verification.get("error", "Verification failed")
-                    response = verification.get("response", "")
+                    
+                    response = verification.get("feedback", "")
                     st.markdown(
                         f'<div class="error-box">❌ <strong>Verification Issues Found:</strong></div>',
                         unsafe_allow_html=True
                     )
                     if response:
                         st.text_area("Verification Feedback:", value=response, height=100)
-                    if error_msg and error_msg != "Verification failed":
-                        st.error(f"Error: {error_msg}")
+
             
-            # Note about verification
-            st.info("💡 **Note:** Verification uses AI analysis. For production use, integrate with actual Lean checker or SafeVerify.")
             
             # CodeProofArena submission (placeholder for future implementation)
             if problem_source == "CodeProofArena" and "arena_problems" in st.session_state:
                 st.subheader("📤 Submit to Arena")
-                st.info("🚧 **Coming Soon:** Direct submission to CodeProofArena will require username/password authentication.")
+                st.info("🚧 **Coming Soon:** Direct submission to [CodeProofArena](http://www.codeproofarena.com:8000/). Meanwhile, feel free to paste the solution over there!")
         
         else:
             st.markdown(
@@ -586,6 +601,16 @@ def main():
                 unsafe_allow_html=True
             )
             
+
+def main():
+    initialize_session_state()
+    # Route based on URL query parameter
+    current_page = get_current_page()
+    
+    if current_page == "landing":
+        show_landing_page()
+    else:
+        show_main_app()
 
 if __name__ == "__main__":
     main()
