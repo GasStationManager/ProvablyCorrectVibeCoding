@@ -326,7 +326,7 @@ def show_landing_page():
     st.markdown("""
 Vibe coding sometimes gets a bad rap, but I believe it reresents a fundamental desire: I have a brilliant idea, and want to turn that into something concrete that people can use. I know what I want to create but don't have the programming expertise. Can my AI assistant help implement my idea into software?
 
-It gets the bad rap because it often doesn't work.  While the current AI coding assistants can often produce large amounts of plausible-looking code, and perhaps 80% of it is correct; the AI often hallucinates and introduces bugs somewhere in the code. When the AI produces such "slop", our vibe coder would not be able to debug it. Even professional developers may find the debugging effort to be not worth it.
+Vibe coding gets the bad rap because it often doesn't work.  While the current AI coding assistants can often produce large amounts of plausible-looking code, and perhaps 80% of it is correct; the AI often hallucinates and introduces bugs somewhere in the code. When the AI produces such "slop", our vibe coder would not be able to debug it. Even professional developers may find the debugging effort to be not worth it.
 
 What if, our AI assistant can produce code that is guaranteed to be correct? 
 
@@ -343,19 +343,49 @@ There is a catch: you will need to express the specification in a way that is pr
 In this demo, you will be able to pose a coding task as a formal specification
 in [Lean](https://lean-lang.org/), a programming language and theorem prover.
 The formal specification will take the form of a signature of a function to be implemented, plus theorem statements about the  function.
-Then, an AI coding agent will attempt to solve the task by implementing the function
-and proving the theorem statements.
+Then, an AI coding agent will attempt to solve the task by implementing the function (in Lean)
+and proving the theorem statements (in Lean).
 Finally, you can verify whether the submitted solution is valid by sending it to the Lean proof checker.
+If the solution passes the proof checker, you now have runnable code that is guaranteed to be correct.
+                
+*What kind of AI coding agent?*
 
+The AI agent consists of:
+- a base LLM model. This can be any of the commercially available models, including offerings from OpenAI, Anthropic, Google and DeepSeek. 
+    You'll need to separately sign up for an API key from one of these providers;                   
+- tools made available to the LLMs to facilitate interactions with Lean; 
+- a feedback loop, to allow iterative fixing and recursive problem-solving.
 
+*How good is this coding agent? Actually, if the current LLMs hallucinate all the time (as you admitted to earlier),
+how do you expect it to output not only correct code, but also correct proof of the code's correctness?*
 
+Excellent question! And that is why if you directly give this task to ChatGPT or Claude.ai, they will likely output something that contains bugs in the code *and* the proof.
+However, we have developed *scaffolding* around the LLM, including the tools mentioned above, that allows the LLM to itratively fix the issues in the code and the proof, by interacting with the Lean proof checker.
+This is not only able to detect and fix simple syntax errors, but also deeper logical errors in the code implementation that arise from hallucinations.                                                           
+For the latter, we employ *property-based testing* techniques to automatically generate test cases that will be triggered if the code implementation violates the specification.
+
+This is work in progress; I expect we will get stronger and stronger agnents as we get newer
+commercial models with better reasoning and coding abilities; and as we get better tooling support, including Lean's hammer tactics that can automatically find proofs for simple proof subgoals.
+Meanwhile, try our demo!
 """
     )
     if st.button("🚀 Get Started", type="primary"):
         st.query_params["page"] = "main"
         st.rerun()
 
+    st.markdown("""
+If you would like learn more about the open-source technologies behind this demo:
+- The tools and feedback loop are provided by [LeanTool](https://github.com/GasStationManager/LeanTool), a library for LLM-Lean interaction.
+- The final proof checking of solutions is done by [SafeVerify](https://github.com/GasStationManager/SafeVerify), a utility for safe and robust proof checking in Lean, guarding against potentially adversarial/malicious submissions. 
 
+If you liked the demo and would like to incorporate the technology into your existing AI-assisted development workflow:
+[LeanTool](https://github.com/GasStationManager/LeanTool) provides an option to deploy as an MCP server,  which allows you to connect to it from
+any MCP-supporting coding assistant interface, including Cursor and Claude Code.
+                
+Finally, I encourage you to share your task specifications and solutions, at [Code with Proofs: The Arena](http://www.codeproofarena.com:8000/).
+Our demo is able to pull problems from the Arena site to be attempted here.
+"""
+    )
 def show_main_app():
     if st.button("← Back to Introduction", type="secondary"):
         st.query_params["page"] = "landing" 
