@@ -326,9 +326,9 @@ def show_landing_page():
     st.markdown("""
 Vibe coding sometimes gets a bad rap, but I believe it reresents a fundamental desire: I have a brilliant idea, and want to turn that into something concrete that people can use. I know what I want to create but don't have the programming expertise. Can my AI assistant help implement my idea into software?
 
-Vibe coding gets the bad rap because it often doesn't work.  While the current AI coding assistants can often produce large amounts of plausible-looking code, and perhaps 80% of it is correct; the AI often hallucinates and introduces bugs somewhere in the code. When the AI produces such "slop", our vibe coder would not be able to debug it. Even professional developers may find the debugging effort to be not worth it.
+Vibe coding gets the bad rap because it often *doesn't work*.  While the current AI coding assistants can often produce large amounts of plausible-looking code, and perhaps 80% of it is correct; the AI often hallucinates and introduces bugs somewhere in the code. When the AI produces such "slop", our vibe coder would not be able to debug it. Even professional developers may find the debugging effort to be not worth it.
 
-What if, our AI assistant can produce code that is guaranteed to be correct? 
+**What if, our AI assistant can produce code that is guaranteed to be correct?** 
 
 *What kind of guarantees?* 
 
@@ -361,8 +361,7 @@ how do you expect it to output not only correct code, but also correct proof of 
 
 Excellent question! And that is why if you directly give this task to ChatGPT or Claude.ai, they will likely output something that contains bugs in the code *and* the proof.
 However, we have developed *scaffolding* around the LLM, including the tools mentioned above, that allows the LLM to itratively fix the issues in the code and the proof, by interacting with the Lean proof checker.
-This is not only able to detect and fix simple syntax errors, but also deeper logical errors in the code implementation that arise from hallucinations.                                                           
-For the latter, we employ *property-based testing* techniques to automatically generate test cases that will be triggered if the code implementation violates the specification.
+This is not only able to detect and fix simple syntax errors, but also deeper logical errors in the code implementation that arise from hallucinations. For the latter, we employ *property-based testing* techniques to automatically generate test cases that will be triggered if the code implementation violates the specification.
 
 This is work in progress; I expect we will get stronger and stronger agnents as we get newer
 commercial models with better reasoning and coding abilities; and as we get better tooling support, including Lean's hammer tactics that can automatically find proofs for simple proof subgoals.
@@ -382,8 +381,11 @@ If you liked the demo and would like to incorporate the technology into your exi
 [LeanTool](https://github.com/GasStationManager/LeanTool) provides an option to deploy as an MCP server,  which allows you to connect to it from
 any MCP-supporting coding assistant interface, including Cursor and Claude Code.
                 
-Finally, I encourage you to share your task specifications and solutions, at [Code with Proofs: The Arena](http://www.codeproofarena.com:8000/).
+I encourage you to share your task specifications and solutions, at [Code with Proofs: The Arena](http://www.codeproofarena.com:8000/).
 Our demo is able to pull problems from the Arena site to be attempted here.
+                
+Finally, check out [my blog](https://gasstationmanager.github.io/) where I go into more details on the research efforts to make safe and hallucination-free coding AIs. 
+If you are interested in contributing to the project, or just have comments and suggestions, please contact me at GasStationCodeManager@gmail.com
 """
     )
 def show_main_app():
