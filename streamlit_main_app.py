@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass
 import logging
 import re
+import urllib
 
 from judge import check_lean_proof
 
@@ -376,9 +377,10 @@ Meanwhile, try our demo!
 If you would like learn more about the open-source technologies behind this demo:
 - The tools and feedback loop are provided by [LeanTool](https://github.com/GasStationManager/LeanTool), a library for LLM-Lean interaction.
 - The final proof checking of solutions is done by [SafeVerify](https://github.com/GasStationManager/SafeVerify), a utility for safe and robust proof checking in Lean, guarding against potentially adversarial/malicious submissions. 
-
+- Source code for this demo is also [available](https://github.com/GasStationManager/ProvablyCorrectVibeCoding).
+                
 If you liked the demo and would like to incorporate the technology into your existing AI-assisted development workflow:
-[LeanTool](https://github.com/GasStationManager/LeanTool) provides an option to deploy as an MCP server,  which allows you to connect to it from
+[LeanTool](https://github.com/GasStationManager/LeanTool) provides an option to deploy as an [MCP](https://modelcontextprotocol.io/) server,  which allows you to connect to it from
 any MCP-supporting coding assistant interface, including Cursor and Claude Code.
                 
 I encourage you to share your task specifications and solutions, at [Code with Proofs: The Arena](http://www.codeproofarena.com:8000/).
@@ -576,7 +578,7 @@ def show_main_app():
             # Verification section
             st.subheader("🔍 Verification")
             
-            col_verify, col_download = st.columns([1, 1])
+            col_verify, col_playground, col_download = st.columns([1, 1, 1])
             
             with col_verify:
                 if st.button("Verify Solution", type="secondary", disabled=(not current_code.strip())):
@@ -588,7 +590,11 @@ def show_main_app():
                             )
                             st.session_state.last_verification = verification_result
                             st.rerun()
-
+            with col_playground:
+                st.link_button(
+                    "Send to live.lean-lang.org Playground",
+                    'https://live.lean-lang.org/#code='+urllib.parse.quote(current_code)
+                )
             
             with col_download:
                 st.download_button(
