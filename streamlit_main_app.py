@@ -162,7 +162,7 @@ class CodeProofArenaClient:
         self.base_url = base_url
         self.session = requests.Session()
     
-    def get_problems(self, limit: int = 30) -> List[Dict]:
+    def get_problems(self, limit: int = 50) -> List[Dict]:
         """Fetch problems from CodeProofArena and convert to unified format"""
         try:
             response = self.session.get(
@@ -554,7 +554,8 @@ def show_main_app():
                     st.session_state.current_solution=result.get('error', 'Unknown error')
                     st.write(f"❌ Error: {st.session_state.current_solution}")
                     status.update(label="❌ Solving failed", state="error")
-                
+
+                st.session_state.last_verification = None
                 st.session_state.solving_in_progress = False
                 time.sleep(1)  # Brief pause before rerun
                 st.rerun()
