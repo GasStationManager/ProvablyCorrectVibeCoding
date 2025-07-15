@@ -105,7 +105,7 @@ class LeanToolClient:
         ]
     
     def solve_problem(self, description: str, specification: str, model: str = "sonnet", 
-                     api_key: str = "", max_iterations: int = 10, timeout: int = 300) -> Dict:
+                     api_key: str = "", max_iterations: int = 10, timeout: int = 300, workflow='basic_fixing') -> Dict:
         """Send problem to LeanTool for solving using OpenAI-compatible API"""
         messages=[
                 {
@@ -113,10 +113,10 @@ class LeanToolClient:
                     "content": f"Please solve the following problem. Description:\n\n{description}\n\nYour solution should satisfy the following Lean 4 specification:\n\n{specification}"
                 }
         ]
-        return self.query (messages, model=model,api_key=api_key, max_iterations=max_iterations,timeout=timeout)
+        return self.query (messages, model=model,api_key=api_key, max_iterations=max_iterations,timeout=timeout,workflow=workflow)
 
     def query(self, messages, model: str = "sonnet", 
-                     api_key: str = "", max_iterations: int = 10, timeout: int = 300) -> Dict:
+                     api_key: str = "", max_iterations: int = 10, timeout: int = 300,workflow='basic_fixing') -> Dict:
         # Prepare headers for OpenAI-compatible API
         headers = {
             "Content-Type": "application/json",
@@ -132,7 +132,8 @@ class LeanToolClient:
             "messages": st.session_state.messages,
             "max_tokens": 2000,
             "max_attempts": max_iterations,
-            "temperature": 0.1
+            "temperature": 0.1,
+            "workflow": workflow
         }
         
         try:
@@ -442,6 +443,13 @@ def show_main_app():
         max_iterations = st.slider("Max Iterations", 1, 20, 10)
         #timeout = st.slider("Timeout (seconds)", 30, 600, 300)
         
+        st.subheader("Workflow")
+        available_workflows=['code_test_prove','draft_sketch_prove','basic_fixing']
+        workflow = st.selectbox(
+            "Select a workflow. See [here](https://github.com/GasStationManager/LeanTool/blob/main/workflows.py) for the prompts associated with each option",
+            available_workflows
+        )
+
         # LeanTool info
         #st.subheader("🔧 LeanTool Server")
         #st.info("Using: http://www.codeproofarena.com:8800/v1")
@@ -560,6 +568,7 @@ def show_main_app():
                     selected_model, 
                     st.session_state.api_key,
                     max_iterations, 
+                    workflow=workflow
                 )
                 
                 if result.get("success", False):
@@ -607,7 +616,7 @@ def show_main_app():
                             st.rerun()
               with col_playground:
                 st.link_button(
-                    "Send to live.lean-lang.org Playground",
+                    "Send to Lean Playground",
                     'https://live.lean-lang.org/#code='+urllib.parse.quote(current_code),
                     disabled=(not current_code.strip())
                 )
@@ -663,6 +672,7 @@ def show_main_app():
                     selected_model, 
                     st.session_state.api_key,
                     max_iterations, 
+                    workflow=workflow
                   )
                 
                   if result.get("success", False):
