@@ -162,9 +162,13 @@ class LeanToolClient:
                     "error": err_msg
                 }
         except requests.exceptions.Timeout:
-            return {"success": False, "error": "Request timed out"}
+            err_msg="Request timed out"
+            st.session_state.messages.append({"role":"assistant","content":err_msg})
+            return {"success": False, "error": err_msg}
         except Exception as e:
-            return {"success": False, "error": f"Network error: {str(e)}"}
+            err_msg=f"Network error: {str(e)}"
+            st.session_state.messages.append({"role":"assistant","content":err_msg})
+            return {"success": False, "error": err_msg}
     
 
 class CodeProofArenaClient:
