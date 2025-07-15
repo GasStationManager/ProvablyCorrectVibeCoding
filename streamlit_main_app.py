@@ -155,7 +155,7 @@ class LeanToolClient:
                 }
             else:
                 err_msg=f"API returned status {response.status_code}: {response.text}"
-                st.session_state.message.append({"role":"assistant","content":err_msg})
+                st.session_state.messages.append({"role":"assistant","content":err_msg})
                 return {
                     "success": False,
                     "error": err_msg
