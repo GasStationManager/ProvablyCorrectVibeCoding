@@ -107,6 +107,7 @@ class LeanToolClient:
     def solve_problem(self, description: str, specification: str, model: str = "sonnet", 
                      api_key: str = "", max_iterations: int = 10, timeout: int = 300, workflow='basic_fixing') -> Dict:
         """Send problem to LeanTool for solving using OpenAI-compatible API"""
+        st.session_state.messages=[]
         messages=[
                 {
                     "role": "user", 
