@@ -93,7 +93,6 @@ class LeanToolClient:
     
     def get_available_models(self) -> List[str]:
         """Get list of available models from LeanTool"""
-        # Since we're using OpenAI-compatible API, return common model names
         return [
             "sonnet", 
             "opus",
@@ -102,27 +101,35 @@ class LeanToolClient:
             "o3",
             "o4-mini",
             "gemini-pro",
+            "grok4",
         ]
     
     def solve_problem(self, description: str, specification: str, model: str = "sonnet", 
                      api_key: str = "", max_iterations: int = 10, timeout: int = 300) -> Dict:
         """Send problem to LeanTool for solving using OpenAI-compatible API"""
-        
+        messages=[
+                {
+                    "role": "user", 
+                    "content": f"Please solve the following problem. Description:\n\n{description}\n\nYour solution should satisfy the following Lean 4 specification:\n\n{specification}"
+                }
+        ]
+        return self.query (messages, model=model,api_key=api_key, max_iterations=max_iterations,timeout=timeout)
+
+    def query(self, messages, model: str = "sonnet", 
+                     api_key: str = "", max_iterations: int = 10, timeout: int = 300) -> Dict:
         # Prepare headers for OpenAI-compatible API
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}"
         }
-        
+        if st.session_state.messages:
+            st.session_state.messages += messages
+        else:
+            st.session_state.messages = messages
         # Format as OpenAI chat completion request
         payload = {
             "model": model,
-            "messages": [
-                {
-                    "role": "user", 
-                    "content": f"Please solve the following problem. Description:\n\n{description}\n\nYour solution should satisfy the following Lean 4 specification:\n\n{specification}"
-                }
-            ],
+            "messages": st.session_state.messages,
             "max_tokens": 2000,
             "max_attempts": max_iterations,
             "temperature": 0.1
@@ -140,6 +147,7 @@ class LeanToolClient:
             if response.status_code == 200:
                 result = response.json()
                 solution = result["choices"][0]["message"]["content"]
+                st.session_state.messages.append(result["choices"][0]["message"])
                 return {
                     "success": True,
                     "solution": solution,
@@ -310,6 +318,8 @@ def initialize_session_state():
         st.session_state.codeproof_client = CodeProofArenaClient()
     if "current_solution" not in st.session_state:
         st.session_state.current_solution = ""
+    if "messages" not in st.session_state:
+        st.session_state.messages = None
     if "solving_in_progress" not in st.session_state:
         st.session_state.solving_in_progress = False
     if "last_verification" not in st.session_state:
@@ -411,7 +421,7 @@ def show_main_app():
             help="Choose the AI model for solving problems"
         )        
         # API Key input
-        st.subheader("🔑 API Key")
+        # st.subheader("🔑 API Key")
         api_key = st.text_input(
             "Enter your API key",
             type="password",
@@ -569,18 +579,21 @@ def show_main_app():
         
         if st.session_state.current_solution:
             # Display the solution
-            st.markdown(st.session_state.current_solution)
+            #st.markdown(st.session_state.current_solution)
+            for message in st.session_state.messages[1:]:
+                with st.chat_message(message['role']):
+                    st.markdown(message['content'])
             current_code=extract_code(st.session_state.current_solution)
             if current_code:
               st.subheader("Code")
               st.code(current_code, language="lean")
             
-            # Verification section
-            st.subheader("🔍 Verification")
+              # Verification section
+              st.subheader("🔍 Verification")
             
-            col_verify, col_playground, col_download = st.columns([1, 1, 1])
+              col_verify, col_playground, col_download = st.columns([1, 1, 1])
             
-            with col_verify:
+              with col_verify:
                 if st.button("Verify Solution", type="secondary", disabled=(not current_code.strip())):
 
                         with st.spinner("Verifying solution..."):
@@ -590,22 +603,23 @@ def show_main_app():
                             )
                             st.session_state.last_verification = verification_result
                             st.rerun()
-            with col_playground:
+              with col_playground:
                 st.link_button(
                     "Send to live.lean-lang.org Playground",
-                    'https://live.lean-lang.org/#code='+urllib.parse.quote(current_code)
+                    'https://live.lean-lang.org/#code='+urllib.parse.quote(current_code),
+                    disabled=(not current_code.strip())
                 )
             
-            with col_download:
+              with col_download:
                 st.download_button(
                     "Download Solution",
-                    data=st.session_state.current_solution,
+                    data=current_code,
                     file_name="lean_solution.lean",
                     mime="text/plain"
                 )
             
-            # Show verification results
-            if st.session_state.last_verification:
+              # Show verification results
+              if st.session_state.last_verification:
                 verification = st.session_state.last_verification
                 if verification.get("is_correct", False):
                     st.markdown(
@@ -628,11 +642,42 @@ def show_main_app():
 
             
             
-            # CodeProofArena submission (placeholder for future implementation)
-            if problem_source == "CodeProofArena" and "arena_problems" in st.session_state:
+              # CodeProofArena submission (placeholder for future implementation)
+              if problem_source == "CodeProofArena" and "arena_problems" in st.session_state:
                 st.subheader("📤 Submit to Arena")
                 st.info("🚧 **Coming Soon:** Direct submission to [CodeProofArena](http://www.codeproofarena.com:8000/). Meanwhile, feel free to paste the solution over there!")
-        
+            else:
+              cont_prompt=st.text_input(
+                  "Continue generation, with the following additoinal prompt",
+                  value='Please continue.'
+              )
+              if st.button("Continue Generation"):
+                with st.status("🤖 AI is working on your problem...", expanded=True) as status:
+                  st.write("Sending specification to LeanTool...")
+                  msgs=[{'role':'user', 'content':cont_prompt}]
+                  # Call LeanTool API
+                  result = st.session_state.leantool_client.query(
+                    msgs, 
+                    selected_model, 
+                    st.session_state.api_key,
+                    max_iterations, 
+                  )
+                
+                  if result.get("success", False):
+                    st.session_state.current_solution = result.get("solution", "")
+                    st.write("✅ Solution generated!")
+                    status.update(label="✅ Problem solved!", state="complete")
+                  else:
+                    st.session_state.current_solution=result.get('error', 'Unknown error')
+                    st.write(f"❌ Error: {st.session_state.current_solution}")
+                    status.update(label="❌ Solving failed", state="error")
+
+                  st.session_state.last_verification = None
+                  #st.session_state.solving_in_progress = False
+                  time.sleep(1)  # Brief pause before rerun
+                  st.rerun()
+ 
+
         else:
             st.markdown(
                 '<div class="info-box">💡 <strong>Ready to solve!</strong><br>'
