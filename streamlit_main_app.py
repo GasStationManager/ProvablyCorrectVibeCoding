@@ -154,9 +154,11 @@ class LeanToolClient:
                     "model_used": model
                 }
             else:
+                err_msg=f"API returned status {response.status_code}: {response.text}"
+                st.session_state.message.append({"role":"assistant","content":err_msg})
                 return {
                     "success": False,
-                    "error": f"API returned status {response.status_code}: {response.text}"
+                    "error": err_msg
                 }
         except requests.exceptions.Timeout:
             return {"success": False, "error": "Request timed out"}
