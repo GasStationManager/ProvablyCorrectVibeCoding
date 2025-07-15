@@ -306,16 +306,6 @@ theorem add_comm_proof (a b : Nat) : a + b = b + a := by sorry""",
         difficulty="Easy"
     ),
     
-    "List Reverse": LeanProblem(
-        title="List Reverse",
-        description="Implement list reversal and prove that reversing twice gives the original list.",
-        specification="""-- Implement list reverse and prove double reverse property
-def my_reverse (l : List α) : List α := sorry
-
-theorem reverse_reverse (l : List α) : 
-  my_reverse (my_reverse l) = l := by sorry""",
-        difficulty="Medium"
-    )
 }
 
 def initialize_session_state():
