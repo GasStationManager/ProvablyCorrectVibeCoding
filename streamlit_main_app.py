@@ -275,19 +275,23 @@ SAMPLE_PROBLEMS = {
     "Sorting Correctness": LeanProblem(
         title="Sorting Correctness",
         description="Implement and prove correctness of a sorting function for natural numbers.",
-        specification="""-- Implement a sorting function and prove it works correctly
+        specification="""import Mathlib
+
+-- Implement a sorting function and prove it works correctly
 def my_sort (l : List Nat) : List Nat := sorry
 
 theorem sort_correct (l : List Nat) : 
   (my_sort l).Sorted (· ≤ ·) ∧ 
-  l.toMultiset = (my_sort l).toMultiset := by sorry""",
+  l.Perm (my_sort l) := by sorry""",
         difficulty="Medium"
     ),
     
     "Binary Search": LeanProblem(
         title="Binary Search",
         description="Implement binary search with a correctness proof.",
-        specification="""-- Implement binary search with correctness proof
+        specification="""import Mathlib.Data.List.Sort
+
+-- Implement binary search with correctness proof
 def binary_search (arr : Array Nat) (target : Nat) : Option Nat := sorry
 
 theorem binary_search_correct (arr : Array Nat) (target : Nat) 
@@ -295,7 +299,7 @@ theorem binary_search_correct (arr : Array Nat) (target : Nat)
   match binary_search arr target with
   | some i => arr[i]? = some target
   | none => target ∉ arr.toList := by sorry""",
-        difficulty="Hard"
+        difficulty="Medium"
     ),
     
     "Addition Commutativity": LeanProblem(
