@@ -292,7 +292,8 @@ theorem sort_correct (l : List Nat) :
         specification="""import Mathlib.Data.List.Sort
 
 -- Implement binary search with correctness proof
-def binary_search (arr : Array Nat) (target : Nat) : Option Nat := sorry
+def binary_search (arr : Array Nat) (target : Nat) 
+  (h : arr.toList.Sorted (· ≤ ·)): Option Nat := sorry
 
 theorem binary_search_correct (arr : Array Nat) (target : Nat) 
   (h : arr.toList.Sorted (· ≤ ·)) :
