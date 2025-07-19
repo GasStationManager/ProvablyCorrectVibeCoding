@@ -440,8 +440,8 @@ def show_main_app():
           
         # Solving parameters
         st.subheader("⚙️ Solving Parameters")
-        max_iterations = st.slider("Max Iterations", 1, 20, 10)
-        #timeout = st.slider("Timeout (seconds)", 30, 600, 300)
+        max_iterations = st.slider("Max Iterations", 1, 20, 5)
+        timeout = st.slider("Timeout (seconds)", 30, 600, 300)
         
         st.subheader("Workflow")
         available_workflows=['code_test_prove','draft_sketch_prove','basic_fixing']
@@ -568,6 +568,7 @@ def show_main_app():
                     selected_model, 
                     st.session_state.api_key,
                     max_iterations, 
+                    timeout=timeout,
                     workflow=workflow
                 )
                 
@@ -672,6 +673,7 @@ def show_main_app():
                     selected_model, 
                     st.session_state.api_key,
                     max_iterations, 
+                    timout=timeout,
                     workflow=workflow
                   )
                 
