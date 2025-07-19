@@ -446,7 +446,7 @@ def show_main_app():
         st.subheader("Workflow")
         available_workflows=['code_test_prove','draft_sketch_prove','basic_fixing']
         workflow = st.selectbox(
-            "Select a workflow. See [here](https://github.com/GasStationManager/LeanTool/blob/main/workflows.py) for the prompts associated with each option",
+            "Select a workflow. See [here](https://github.com/GasStationManager/LeanTool/blob/main/workflows.py) for the prompts associated with each option. Try 'code_test_prove' for coding-with-proof tasks, 'sketch_draft_prove' for proof tasks, and 'basic_fixing' for simple tasks.",
             available_workflows
         )
 
