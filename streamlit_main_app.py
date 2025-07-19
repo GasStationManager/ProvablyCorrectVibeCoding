@@ -100,6 +100,7 @@ class LeanToolClient:
             "r1",
             "o3",
             "o4-mini",
+            "gemini-flash",
             "gemini-pro",
             "grok4",
         ]
