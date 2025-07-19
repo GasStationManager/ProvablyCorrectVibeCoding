@@ -674,7 +674,7 @@ def show_main_app():
                     selected_model, 
                     st.session_state.api_key,
                     max_iterations, 
-                    timout=timeout,
+                    timeout=timeout,
                     workflow=workflow
                   )
                 
