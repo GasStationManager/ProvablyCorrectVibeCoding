@@ -298,7 +298,7 @@ def binary_search (arr : Array Nat) (target : Nat)
 
 theorem binary_search_correct (arr : Array Nat) (target : Nat) 
   (h : arr.toList.Sorted (· ≤ ·)) :
-  match binary_search arr target with
+  match binary_search arr target h with
   | some i => arr[i]? = some target
   | none => target ∉ arr.toList := by sorry""",
         difficulty="Medium"
